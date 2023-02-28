@@ -62,7 +62,7 @@ void* createBlockUnwindInfo(void* context, uint8_t* block, size_t blockSize, siz
     unwindSize = (unwindSize + (kCodeAlignment - 1)) & ~(kCodeAlignment - 1); // Match code allocator alignment
     LUAU_ASSERT(blockSize >= unwindSize);
 
-    RUNTIME_FUNCTION* runtimeFunc = (RUNTIME_FUNCTION*)block;
+    IMAGE_RUNTIME_FUNCTION_ENTRY* runtimeFunc = (IMAGE_RUNTIME_FUNCTION_ENTRY*)block;
     runtimeFunc->BeginAddress = DWORD(unwindSize);                    // Code will start after the unwind info
     runtimeFunc->EndAddress = DWORD(blockSize);                       // Whole block is a part of a 'single function'
     runtimeFunc->UnwindInfoAddress = DWORD(sizeof(RUNTIME_FUNCTION)); // Unwind info is placed at the start of the block
@@ -70,7 +70,7 @@ void* createBlockUnwindInfo(void* context, uint8_t* block, size_t blockSize, siz
     char* unwindData = (char*)block + runtimeFunc->UnwindInfoAddress;
     unwind->finalize(unwindData, block + unwindSize, blockSize - unwindSize);
 
-    if (!RtlAddFunctionTable(runtimeFunc, 1, uintptr_t(block)))
+    if (!RtlAddFunctionTable((RUNTIME_FUNCTION*)runtimeFunc, 1, uintptr_t(block)))
     {
         LUAU_ASSERT(!"failed to allocate function table");
         return nullptr;
